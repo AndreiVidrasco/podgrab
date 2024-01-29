@@ -2,7 +2,9 @@ package service
 
 import (
 	"archive/tar"
+	"bytes"
 	"compress/gzip"
+	"encoding/json"
 	"encoding/xml"
 	"errors"
 	"fmt"
@@ -23,12 +25,19 @@ import (
 )
 
 func Download(link string, episodeTitle string, podcastName string, prefix string) (string, error) {
+	fmt.Print("[andrei] Trying to download")
 	if link == "" {
 		return "", errors.New("Download path empty")
 	}
 	client := httpClient()
+	fileName := getFileName(link, episodeTitle, ".mp4")
+	if prefix != "" {
+		fileName = fmt.Sprintf("%s-%s", prefix, fileName)
+	}
+	folder := createDataFolderIfNotExists(podcastName)
+	finalPath := path.Join(folder, fileName)
 
-	req, err := getRequest(link)
+	req, err := getDownloadRequest(link, finalPath)
 	if err != nil {
 		Logger.Errorw("Error creating request: "+link, err)
 	}
@@ -38,33 +47,27 @@ func Download(link string, episodeTitle string, podcastName string, prefix strin
 		Logger.Errorw("Error getting response: "+link, err)
 		return "", err
 	}
-
-	fileName := getFileName(link, episodeTitle, ".mp3")
-	if prefix != "" {
-		fileName = fmt.Sprintf("%s-%s", prefix, fileName)
-	}
-	folder := createDataFolderIfNotExists(podcastName)
-	finalPath := path.Join(folder, fileName)
-
-	if _, err := os.Stat(finalPath); !os.IsNotExist(err) {
-		changeOwnership(finalPath)
-		return finalPath, nil
-	}
-
-	file, err := os.Create(finalPath)
-	if err != nil {
-		Logger.Errorw("Error creating file"+link, err)
-		return "", err
-	}
 	defer resp.Body.Close()
-	_, erra := io.Copy(file, resp.Body)
-	//fmt.Println(size)
-	defer file.Close()
-	if erra != nil {
-		Logger.Errorw("Error saving file"+link, err)
-		return "", erra
-	}
-	changeOwnership(finalPath)
+	fmt.Print(resp.Body)
+	// if _, err := os.Stat(finalPath); !os.IsNotExist(err) {
+	// 	changeOwnership(finalPath)
+	// 	return finalPath, nil
+	// }
+
+	// file, err := os.Create(finalPath)
+	// if err != nil {
+	// 	Logger.Errorw("Error creating file"+link, err)
+	// 	return "", err
+	// }
+	// defer resp.Body.Close()
+	// _, erra := io.Copy(file, resp.Body)
+	// //fmt.Println(size)
+	// defer file.Close()
+	// if erra != nil {
+	// 	Logger.Errorw("Error saving file"+link, err)
+	// 	return "", erra
+	// }
+	// changeOwnership(finalPath)
 	return finalPath, nil
 
 }
@@ -342,6 +345,38 @@ func httpClient() *http.Client {
 	}
 
 	return &client
+}
+func getDownloadRequest(url string, title string) (*http.Request, error) {
+	// URL for the POST request
+	apiURL := "http://localhost:3377/download"
+
+	// Data to be sent in the POST request
+
+	// Create a map with the data
+	data := map[string]string{
+		"url":   url,
+		"title": title,
+	}
+
+	// Convert the map to a JSON string
+	jsonData, err := json.Marshal(data)
+	if err != nil {
+		fmt.Println("Error marshaling JSON:", err)
+		return nil, err
+	}
+
+	// Create a custom HTTP POST request with JSON data
+	req, err := http.NewRequest(http.MethodPost, apiURL, bytes.NewBuffer(jsonData))
+	if err != nil {
+		return nil, err
+	}
+
+	setting := db.GetOrCreateSetting()
+	if len(setting.UserAgent) > 0 {
+		req.Header.Add("User-Agent", setting.UserAgent)
+	}
+
+	return req, nil
 }
 
 func getRequest(url string) (*http.Request, error) {

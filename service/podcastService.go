@@ -35,7 +35,7 @@ func ParseOpml(content string) (model.OpmlModel, error) {
 	return response, err
 }
 
-//FetchURL is
+// FetchURL is
 func FetchURL(url string) (model.PodcastData, []byte, error) {
 	body, err := makeQuery(url)
 	if err != nil {
@@ -331,7 +331,10 @@ func AddPodcastItems(podcast *db.Podcast, newPodcast bool) error {
 			if summary == "" {
 				summary = strip.StripTags(obj.Description)
 			}
-
+			fileUrl := obj.Link
+			if obj.Enclosure.URL != "" {
+				fileUrl = obj.Enclosure.URL
+			}
 			podcastItem = db.PodcastItem{
 				PodcastID:      podcast.ID,
 				Title:          obj.Title,
@@ -339,7 +342,7 @@ func AddPodcastItems(podcast *db.Podcast, newPodcast bool) error {
 				EpisodeType:    obj.EpisodeType,
 				Duration:       duration,
 				PubDate:        pubDate,
-				FileURL:        obj.Enclosure.URL,
+				FileURL:        fileUrl,
 				GUID:           obj.Guid.Text,
 				Image:          obj.Image.Href,
 				DownloadStatus: downloadStatus,
