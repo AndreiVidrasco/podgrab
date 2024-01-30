@@ -194,7 +194,7 @@ func main() {
 	router.GET("/opml", controllers.GetOmpl)
 	router.GET("/player", controllers.PlayerPage)
 	router.GET("/rss", controllers.GetRss)
-
+	router.GET("/force-refresh", controllers.ForceRefresh)
 	r.GET("/ws", func(c *gin.Context) {
 		controllers.Wshandler(c.Writer, c.Request)
 	})

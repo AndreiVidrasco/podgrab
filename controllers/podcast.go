@@ -645,3 +645,12 @@ func UpdateSetting(c *gin.Context) {
 	}
 
 }
+
+func ForceRefresh(c *gin.Context) {
+	err := service.RefreshEpisodes()
+	if err == nil {
+		c.JSON(200, gin.H{"message": "Success"})
+	} else {
+		c.JSON(http.StatusBadRequest, err)
+	}
+}
