@@ -406,7 +406,8 @@ func createFolder(folder string, parent string) string {
 
 func createDataFolderIfNotExists(folder string) string {
 	dataPath := os.Getenv("DATA")
-	return createFolder(folder, dataPath)
+	return dataPath
+	// return createFolder(folder, dataPath)
 }
 func createConfigFolderIfNotExists(folder string) string {
 	dataPath := os.Getenv("CONFIG")
