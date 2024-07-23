@@ -348,7 +348,7 @@ func httpClient() *http.Client {
 }
 func getDownloadRequest(url string, title string) (*http.Request, error) {
 	// URL for the POST request
-	apiURL := "http://localhost:3377/download"
+	apiURL := os.Getenv("DOWNLOADER_URL")
 
 	// Data to be sent in the POST request
 
